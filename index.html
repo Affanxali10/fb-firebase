@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1E88E5, #42A5F5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 15px 50px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+            transform: scale(1);
+            animation: pop-up 0.5s ease-out;
+        }
+        h2 { 
+            margin-bottom: 15px; 
+            color: #333; 
+            font-size: 24px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #1E88E5;
+            box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            border: none;
+            background: #1E88E5;
+            color: white;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(30, 136, 229, 0.2);
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #1565C0;
+            transform: translateY(-3px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .google-btn {
+            background: #DB4437;
+            margin-top: 10px;
+            box-shadow: 0 10px 20px rgba(219, 68, 55, 0.2);
+            transition: all 0.3s ease;
+        }
+        .google-btn:hover {
+            background: #C1351E;
+            transform: translateY(-3px);
+        }
+        .switch {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .switch a {
+            color: #1E88E5;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .switch a:hover { 
+            text-decoration: underline; 
+        }
+        #error-msg {
+            font-size: 14px;
+            margin-top: 10px;
+            color: red;
+            animation: fade-in 0.5s ease-out;
+        }
+        @keyframes pop-up {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Login</h2>
+        <input type="email" id="login-email" placeholder="Email Address" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button id="login-btn">Login</button>
+        <p id="error-msg"></p>
+        <button class="google-btn" id="google-login">Login with Google</button>
+        <p class="switch">Don't have an account? <a href="signup.html">Sign Up</a></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+    apiKey: "AIzaSyC0f-14dttmH7Hqbh3OlAKLcJ7oFhoGet8",
+    authDomain: "newfacebook-4a3cb.firebaseapp.com",
+    projectId: "newfacebook-4a3cb",
+    storageBucket: "newfacebook-4a3cb.firebasestorage.app",
+    messagingSenderId: "1007009787036",
+    appId: "1:1007009787036:web:d60946bdb82f718e7d1159",
+    measurementId: "G-SC43D8KQ2V"
+  };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const loginBtn = document.getElementById("login-btn");
+        const googleLoginBtn = document.getElementById("google-login");
+        const errorMsg = document.getElementById("error-msg");
+
+        loginBtn.addEventListener("click", async () => {
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                errorMsg.innerText = "Error: " + error.message;
+            }
+        });
+
+        googleLoginBtn.addEventListener("click", async () => {
+            try {
+                await signInWithPopup(auth, provider);
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                errorMsg.innerText = "Google Login Error: " + error.message;
+            }
+        });
+    </script>
+
+</body>
+</html>

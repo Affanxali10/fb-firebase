@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 50%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px gray;
+            border-radius: 10px;
+            margin-top: 50px;
+        }
+
+        input,
+        textarea {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .post {
+            text-align: left;
+            background: #fff;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px gray;
+        }
+
+        .post img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Welcome to Your Dashboard</h2>
+        <button id="logout-btn">Logout</button>
+
+        <h3>Create a Post</h3>
+        <textarea id="post-text" placeholder="Write something..."></textarea>
+        <input type="file" id="post-image" accept="image/*">
+        <button id="post-btn">Post</button>
+
+        <h3>Posts</h3>
+        <div id="posts-container"></div>
+    </div>
+
+    <script type="module">
+// Import Firebase SDKs
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
+
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyC0f-14dttmH7Hqbh3OlAKLcJ7oFhoGet8",
+    authDomain: "newfacebook-4a3cb.firebaseapp.com",
+    projectId: "newfacebook-4a3cb",
+    storageBucket: "newfacebook-4a3cb.firebasestorage.app",
+    messagingSenderId: "1007009787036",
+    appId: "1:1007009787036:web:d60946bdb82f718e7d1159",
+    measurementId: "G-SC43D8KQ2V"
+  };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// Redirect if not authenticated
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        console.warn("User not authenticated, redirecting to login page...");
+        window.location.href = "index.html";
+    } else {
+        console.log("User authenticated:", user);
+        loadPosts();
+    }
+});
+
+// Logout function
+document.getElementById("logout-btn").addEventListener("click", async () => {
+    try {
+        await signOut(auth);
+        console.log("User logged out successfully.");
+        window.location.href = "index.html";
+    } catch (error) {
+        console.error("Logout Error:", error.message);
+    }
+});
+
+// Create post function
+document.getElementById("post-btn").addEventListener("click", async () => {
+    const text = document.getElementById("post-text").value.trim();
+    const file = document.getElementById("post-image").files[0];
+
+    if (!text && !file) {
+        alert("Please write something or select an image!");
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in to post!");
+        return;
+    }
+
+    let imageUrl = null;
+
+    if (file) {
+        try {
+            const storageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            imageUrl = await getDownloadURL(snapshot.ref);
+            console.log("Image Uploaded Successfully:", imageUrl);
+        } catch (error) {
+            console.error("Image Upload Error:", error);
+            alert("Image upload failed. Please try again.");
+            return;
+        }
+    }
+
+    try {
+        await addDoc(collection(db, "posts"), {
+            text: text,
+            imageUrl: imageUrl,
+            userId: user.uid,
+            createdAt: serverTimestamp()
+        });
+
+        alert("Post created successfully!");
+        document.getElementById("post-text").value = "";
+        document.getElementById("post-image").value = "";
+        loadPosts();
+    } catch (error) {
+        console.error("Post Upload Error:", error);
+        alert("Failed to create post. Check Firestore permissions.");
+    }
+});
+
+// Load posts from Firestore
+async function loadPosts() {
+    const postsContainer = document.getElementById("posts-container");
+    postsContainer.innerHTML = "";
+
+    try {
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach((doc) => {
+            const post = doc.data();
+            console.log("Post Data Loaded:", post);
+
+            const postElement = document.createElement("div");
+            postElement.classList.add("post");
+            postElement.innerHTML = `
+                <p>${post.text}</p>
+                ${post.imageUrl ? `<img src="${post.imageUrl}" alt="Post Image" style="max-width: 100%; border-radius: 5px;">` : ""}
+            `;
+
+            postsContainer.appendChild(postElement);
+        });
+    } catch (error) {
+        console.error("Error loading posts:", error);
+        alert("Failed to load posts. Check Firestore permissions.");
+    }
+}
+    </script>
+
+</body>
+
+</html>
